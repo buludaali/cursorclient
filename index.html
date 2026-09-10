@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Cursor Client</title>
+	<meta name="description" content="A lightweight Fabric utility client for Minecraft 1.21.11 — ClickGUI, combat tools, and toggleable modules." />
+	<meta property="og:title" content="Cursor Client" />
+	<meta property="og:description" content="Lightweight Fabric utility client for Minecraft 1.21.11." />
+	<meta property="og:type" content="website" />
+	<meta property="og:image" content="logo.png" />
+	<link rel="preconnect" href="https://fonts.googleapis.com" />
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+	<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+	<link rel="icon" href="logo.png" />
+	<style>
+		:root {
+			--bg: #000000;
+			--ink: #050507;
+			--text: #f4f6fa;
+			--muted: #9aa3b2;
+			--silver: #c8d0dc;
+			--line: rgba(200, 208, 220, 0.18);
+			--accent: #3ecbff;
+			--accent-hot: #6ad8ff;
+			--accent-dim: rgba(62, 203, 255, 0.16);
+			--ease: cubic-bezier(0.22, 1, 0.36, 1);
+		}
+
+		* {
+			box-sizing: border-box;
+			margin: 0;
+			padding: 0;
+		}
+
+		html, body {
+			min-height: 100%;
+		}
+
+		body {
+			font-family: "Outfit", sans-serif;
+			color: var(--text);
+			background: var(--bg);
+			overflow-x: hidden;
+			-webkit-font-smoothing: antialiased;
+		}
+
+		a {
+			color: inherit;
+			text-decoration: none;
+		}
+
+		.scene {
+			min-height: 100svh;
+			position: relative;
+			display: grid;
+			grid-template-rows: 1fr auto;
+			isolation: isolate;
+			overflow: hidden;
+			background:
+				radial-gradient(ellipse 55% 45% at 50% 28%, rgba(62, 203, 255, 0.18), transparent 62%),
+				radial-gradient(ellipse 70% 50% at 50% 100%, rgba(80, 100, 140, 0.12), transparent 55%),
+				linear-gradient(180deg, #050508 0%, #000000 55%, #000000 100%);
+		}
+
+		.scene::before {
+			content: "";
+			position: absolute;
+			inset: 0;
+			background-image:
+				linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+				linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+			background-size: 64px 64px;
+			mask-image: radial-gradient(ellipse 55% 50% at 50% 35%, black 10%, transparent 72%);
+			animation: grid-drift 30s linear infinite;
+			pointer-events: none;
+			z-index: 0;
+		}
+
+		.scene::after {
+			content: "";
+			position: absolute;
+			inset: 0;
+			background: linear-gradient(to top, rgba(0, 0, 0, 0.88) 0%, transparent 38%);
+			pointer-events: none;
+			z-index: 1;
+		}
+
+		.hero {
+			position: relative;
+			z-index: 3;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			text-align: center;
+			padding: clamp(3rem, 8vh, 5rem) 1.5rem 2rem;
+		}
+
+		.logo {
+			width: min(72vw, 340px);
+			height: auto;
+			display: block;
+			opacity: 0;
+			transform: translateY(22px) scale(0.97);
+			animation: logo-in 1s var(--ease) 0.05s forwards, logo-float 7s ease-in-out 1.2s infinite;
+			filter: drop-shadow(0 0 48px rgba(62, 203, 255, 0.22));
+		}
+
+		.headline {
+			margin-top: clamp(1.5rem, 3.5vh, 2.25rem);
+			max-width: 22ch;
+			font-size: clamp(1.35rem, 2.8vw, 1.85rem);
+			font-weight: 500;
+			letter-spacing: -0.03em;
+			line-height: 1.25;
+			color: var(--silver);
+			opacity: 0;
+			transform: translateY(18px);
+			animation: rise 0.85s var(--ease) 0.22s forwards;
+		}
+
+		.lede {
+			margin-top: 0.75rem;
+			max-width: 36ch;
+			font-size: clamp(0.95rem, 1.4vw, 1.05rem);
+			font-weight: 400;
+			line-height: 1.55;
+			color: var(--muted);
+			opacity: 0;
+			transform: translateY(16px);
+			animation: rise 0.85s var(--ease) 0.34s forwards;
+		}
+
+		.actions {
+			margin-top: clamp(1.75rem, 4vh, 2.5rem);
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: center;
+			align-items: center;
+			gap: 0.85rem;
+			opacity: 0;
+			transform: translateY(14px);
+			animation: rise 0.85s var(--ease) 0.46s forwards;
+		}
+
+		.cta {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			gap: 0.65rem;
+			min-height: 3rem;
+			padding: 0.85rem 1.35rem;
+			font-size: 0.92rem;
+			font-weight: 600;
+			letter-spacing: -0.01em;
+			border: 1px solid transparent;
+			transition: transform 0.35s var(--ease), background 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+		}
+
+		.cta-primary {
+			background: var(--accent);
+			color: #031018;
+		}
+
+		.cta-primary:hover {
+			background: var(--accent-hot);
+			transform: translateY(-2px);
+		}
+
+		.cta-discord {
+			background: transparent;
+			color: var(--text);
+			border-color: var(--line);
+		}
+
+		.cta-discord:hover {
+			border-color: rgba(62, 203, 255, 0.55);
+			background: var(--accent-dim);
+			color: var(--accent-hot);
+			transform: translateY(-2px);
+		}
+
+		.cta:focus-visible {
+			outline: 2px solid var(--accent);
+			outline-offset: 3px;
+		}
+
+		.cta svg {
+			width: 1.05rem;
+			height: 1.05rem;
+			flex-shrink: 0;
+		}
+
+		.cta-primary svg {
+			transition: transform 0.35s var(--ease);
+		}
+
+		.cta-primary:hover svg {
+			transform: translateX(3px);
+		}
+
+		.meta {
+			margin-top: 1.15rem;
+			font-size: 0.8rem;
+			font-weight: 500;
+			color: var(--muted);
+			letter-spacing: 0.04em;
+			text-transform: uppercase;
+			opacity: 0;
+			animation: rise 0.85s var(--ease) 0.56s forwards;
+		}
+
+		.meta strong {
+			color: var(--silver);
+			font-weight: 600;
+		}
+
+		footer {
+			position: relative;
+			z-index: 3;
+			display: flex;
+			justify-content: space-between;
+			gap: 1rem;
+			flex-wrap: wrap;
+			padding: 0 clamp(1.5rem, 5vw, 4rem) 1.4rem;
+			font-size: 0.78rem;
+			font-weight: 500;
+			color: var(--muted);
+		}
+
+		footer a {
+			border-bottom: 1px solid var(--line);
+			transition: color 0.2s ease, border-color 0.2s ease;
+		}
+
+		footer a:hover {
+			color: var(--accent-hot);
+			border-color: rgba(62, 203, 255, 0.45);
+		}
+
+		@keyframes rise {
+			to {
+				opacity: 1;
+				transform: translateY(0);
+			}
+		}
+
+		@keyframes logo-in {
+			to {
+				opacity: 1;
+				transform: translateY(0) scale(1);
+			}
+		}
+
+		@keyframes logo-float {
+			0%, 100% { transform: translateY(0); }
+			50% { transform: translateY(8px); }
+		}
+
+		@keyframes grid-drift {
+			from { background-position: 0 0, 0 0; }
+			to { background-position: 64px 64px, 64px 64px; }
+		}
+
+		@media (max-width: 520px) {
+			.actions {
+				width: 100%;
+				flex-direction: column;
+			}
+
+			.cta {
+				width: 100%;
+			}
+		}
+
+		@media (prefers-reduced-motion: reduce) {
+			*, *::before, *::after {
+				animation: none !important;
+				transition: none !important;
+			}
+
+			.logo, .headline, .lede, .actions, .meta {
+				opacity: 1;
+				transform: none;
+			}
+		}
+	</style>
+</head>
+<body>
+	<main class="scene">
+		<div class="hero">
+			<img
+				class="logo"
+				src="logo.png"
+				width="1024"
+				height="1024"
+				alt="Cursor Client"
+			/>
+			<p class="headline">A sharp utility client for Minecraft 1.21.11.</p>
+			<p class="lede">ClickGUI, combat tools, and toggleable modules — built for Fabric.</p>
+			<div class="actions">
+				<a class="cta cta-primary" href="https://github.com/buludaali/cursorclient/releases">
+					Download latest release
+					<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+						<path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+					</svg>
+				</a>
+				<a class="cta cta-discord" href="https://discord.gg/k3qsvDrjH7" target="_blank" rel="noopener noreferrer">
+					<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+						<path d="M19.27 5.33C17.94 4.71 16.5 4.26 15 4a.09.09 0 0 0-.07.03c-.18.33-.39.76-.53 1.09a16.09 16.09 0 0 0-4.8 0c-.14-.34-.35-.76-.54-1.09c-.01-.02-.04-.03-.07-.03c-1.5.26-2.93.71-4.27 1.33c-.01 0-.02.01-.03.02c-2.72 4.07-3.47 8.03-3.1 11.95c0 .02.01.04.03.05c1.8 1.32 3.53 2.12 5.24 2.65c.03.01.06 0 .07-.02c.4-.55.76-1.13 1.07-1.74c.02-.04 0-.08-.04-.09c-.57-.22-1.11-.48-1.64-.78c-.04-.02-.04-.08-.01-.11c.11-.08.22-.17.33-.25c.02-.02.05-.02.07-.01c3.44 1.57 7.15 1.57 10.55 0c.02-.01.05-.01.07.01c.11.09.22.17.33.26c.04.03.04.09-.01.11c-.52.31-1.07.56-1.64.78c-.04.01-.05.06-.04.09c.32.61.68 1.19 1.07 1.74c.02.02.05.03.08.02c1.72-.53 3.45-1.33 5.25-2.65c.02-.01.03-.03.03-.05c.44-4.53-.73-8.46-3.1-11.95c-.01-.01-.02-.02-.04-.02zM8.52 14.91c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12c0 1.17-.84 2.12-1.89 2.12zm6.97 0c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12c0 1.17-.83 2.12-1.89 2.12z" />
+					</svg>
+					Join the Discord
+				</a>
+			</div>
+			<p class="meta">Fabric · <strong>1.21.11</strong></p>
+		</div>
+
+		<footer>
+			<span>Lightweight. Toggleable. Yours.</span>
+			<a href="https://github.com/buludaali/cursorclient">Source on GitHub</a>
+		</footer>
+	</main>
+</body>
+</html>
